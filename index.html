@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BK AUTO">
+<meta name="theme-color" content="#0b1329">
+</head>
+<body>
+<title>BK AUTO Hub</title>
+<style>
+  /* Layout : en-tête, KPI, onglets, puis une vue active. Thème sombre unique (choix de design d'origine). */
+  :root {
+    color-scheme: dark;
+    --bg: #0b1329; --panel: #0f172a; --deep: #050b18; --line: #1e293b; --line2: #334155;
+    --fg: #f1f5f9; --muted: #94a3b8; --dim: #64748b;
+    --accent: #0284c7; --accent-h: #0369a1; --sky: #38bdf8;
+    --ok: #34d399; --warn: #fbbf24; --bad: #f87171; --violet: #818cf8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { background-color: var(--bg); color: var(--fg); padding-block: 20px; padding-left: 16px; padding-right: 16px; }
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  .header { display: flex; justify-content: space-between; align-items: center; background: var(--panel); padding: 18px 24px; border-radius: 16px; border: 1px solid var(--line); margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+  .logo-area { display: flex; align-items: center; gap: 12px; }
+  .logo-badge { background: var(--accent); color: white; font-weight: 900; font-size: 20px; padding: 8px 14px; border-radius: 12px; }
+  .title { font-size: 22px; font-weight: 800; }
+  .subtitle { font-size: 12px; color: var(--muted); }
+  .btn-add { background: var(--accent); color: white; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 13px; }
+  .btn-add:hover { background: var(--accent-h); }
+  .btn-export { background: var(--line); color: var(--sky); border: 1px solid var(--line2); padding: 10px 14px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 13px; }
+  .btn-sync { background: #047857; color: white; border: none; padding: 10px 14px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 13px; }
+  .btn-sync:hover { background: #059669; }
+  .btn-scan-head { background: var(--sky); color: #04213a; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-scan-head:hover { background: #7dd3fc; }
+  button:focus-visible, input:focus-visible, select:focus-visible, label:focus-within { outline: 2px solid var(--sky); outline-offset: 2px; }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .kpi-card { background: var(--panel); border: 1px solid var(--line); padding: 16px; border-radius: 14px; cursor: pointer; transition: all 0.2s; }
+  .kpi-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .kpi-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .kpi-num { font-size: 26px; font-weight: 900; margin: 8px 0 4px; font-variant-numeric: tabular-nums; }
+  .kpi-sub { font-size: 11px; color: var(--dim); }
+
+  .nav-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+  .tab-btn { background: var(--line); color: var(--muted); border: 1px solid var(--line2); padding: 9px 16px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; }
+  .tab-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+  .search-box { width: 100%; max-width: 320px; padding: 8px 14px; background: var(--deep); border: 1px solid var(--line2); border-radius: 10px; color: white; font-size: 12px; margin-left: auto; }
+
+  .view-section { display: none; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 20px; }
+  .view-section.active { display: block; }
+  .section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+  .table-container { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+  th { padding: 12px; background: var(--deep); color: var(--muted); text-transform: uppercase; font-size: 10px; font-weight: 800; border-bottom: 1px solid var(--line); letter-spacing: .04em; }
+  td { padding: 12px; border-bottom: 1px solid var(--line); }
+  tr:hover td { background: #131d38; }
+
+  .badge { padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; }
+  .badge-hiver { background: rgba(14,165,233,.2); color: var(--sky); border: 1px solid var(--accent); }
+  .badge-ete { background: rgba(245,158,11,.2); color: var(--warn); border: 1px solid #d97706; }
+  .badge-4s { background: rgba(52,211,153,.15); color: var(--ok); border: 1px solid #059669; }
+  .badge-rack { background: var(--deep); color: var(--sky); font-family: monospace; font-weight: 900; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--line2); }
+  .tread-alert { color: var(--bad); font-weight: 900; background: rgba(239,68,68,.15); padding: 2px 6px; border-radius: 4px; }
+
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .prod-card { background: var(--deep); border: 1px solid var(--line); padding: 16px; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; }
+  .qty-ctrl { display: inline-flex; align-items: center; background: var(--panel); border: 1px solid var(--line2); border-radius: 8px; overflow: hidden; }
+  .btn-qty { background: var(--line); border: none; color: white; width: 26px; height: 26px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .btn-qty:hover { background: var(--accent); }
+  .qty-display { padding: 0 10px; font-weight: 800; font-size: 12px; color: var(--sky); font-variant-numeric: tabular-nums; }
+  .price-edit-ctrl { display: inline-flex; align-items: center; gap: 4px; background: var(--panel); border: 1px solid var(--line2); padding: 2px 6px; border-radius: 8px; }
+  .input-price { width: 70px; background: transparent; border: none; color: var(--ok); font-weight: 900; font-size: 14px; text-align: right; outline: none; }
+  .input-price:focus { background: var(--line); border-radius: 4px; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.8); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+  .modal-overlay.active { display: flex; }
+  .modal-box { background: var(--panel); border: 1px solid var(--line2); max-width: 560px; width: 100%; border-radius: 16px; padding: 20px; max-height: 90vh; overflow-y: auto; }
+  .modal-title { font-size: 16px; font-weight: 800; margin-bottom: 12px; display: flex; justify-content: space-between; }
+  .close-btn { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 11px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px; }
+  .form-group input, .form-group select { width: 100%; padding: 8px 12px; background: var(--deep); border: 1px solid var(--line2); border-radius: 8px; color: white; font-size: 12px; transition: border-color .3s, box-shadow .3s; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .form-row-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .modal-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 16px; }
+  .modal-tab-btn { background: var(--deep); color: var(--muted); border: 1px solid var(--line2); padding: 8px 4px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; text-align: center; }
+  .modal-tab-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn-delete { background: #7f1d1d; color: #fca5a5; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px; white-space: nowrap; }
+  .btn-delete.armed { background: #dc2626; color: white; }
+
+  /* Scan */
+  .scan-panel { background: linear-gradient(135deg, rgba(56,189,248,.12), rgba(2,132,199,.04)); border: 1px dashed var(--accent); border-radius: 12px; padding: 12px; margin-bottom: 16px; }
+  .scan-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .scan-head b { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--sky); }
+  .scan-head span { font-size: 11px; color: var(--muted); }
+  .scan-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .scan-btn { display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--deep); border: 1px solid var(--line2); color: var(--fg); padding: 12px 8px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; text-align: center; }
+  .scan-btn:hover { border-color: var(--sky); }
+  .scan-btn svg { flex: none; }
+  .scan-btn input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .scan-btn.busy { opacity: .5; pointer-events: none; }
+  .scan-status { margin-top: 10px; font-size: 12px; line-height: 1.45; display: flex; gap: 10px; align-items: flex-start; }
+  .scan-status img { width: 54px; height: 54px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line2); flex: none; }
+  .scan-status.ok { color: var(--ok); }
+  .scan-status.err { color: var(--bad); }
+  .scan-status.busy { color: var(--sky); }
+  .scan-status ul { margin: 4px 0 0 16px; color: var(--fg); }
+  .filled { border-color: var(--ok) !important; box-shadow: 0 0 0 3px rgba(52,211,153,.18); }
+  .spin { width: 14px; height: 14px; border: 2px solid var(--sky); border-right-color: transparent; border-radius: 50%; animation: sp 0.8s linear infinite; flex: none; margin-top: 2px; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation: none; } .kpi-card { transition: none; } }
+
+  .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--line); border: 1px solid var(--line2); color: var(--fg); padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 200; max-width: calc(100% - 32px); }
+
+  @media (max-width: 520px) {
+    .header { padding: 14px; }
+    .search-box { max-width: none; margin-left: 0; }
+    .modal-tabs { grid-template-columns: 1fr 1fr; }
+    .form-row-4 { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+
+<div class="container">
+  <div class="header">
+    <div class="logo-area">
+      <div class="logo-badge">BK</div>
+      <div>
+        <div class="title">BK AUTO</div>
+        <div class="subtitle">Gardiennage • Roues Complètes • Pneus Neufs & Occasions</div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <button class="btn-scan-head" onclick="openModal('gardiennage', true)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>
+        Scanner
+      </button>
+      <button class="btn-sync" onclick="forceReloadAll()">🔄 Recharger Stock Réceptions</button>
+      <button class="btn-add" onclick="openModal('gardiennage')">+ Ajouter un article</button>
+      <button class="btn-export" onclick="exportData()">Exporter CSV</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card" onclick="showTab('gardiennage')">
+      <div class="kpi-label">Gardiennage</div>
+      <div class="kpi-num" style="color: var(--sky);" id="kpi-gard">0</div>
+      <div class="kpi-sub" id="kpi-gard-sub">0 Hiver • 0 Été</div>
+    </div>
+    <div class="kpi-card" onclick="showTab('roues_neuves')">
+      <div class="kpi-label">Roues Neuves</div>
+      <div class="kpi-num" style="color: var(--violet);" id="kpi-roues">0</div>
+      <div class="kpi-sub">Total unités</div>
+    </div>
+    <div class="kpi-card" onclick="showTab('pneus_neufs')">
+      <div class="kpi-label">Pneus Neufs</div>
+      <div class="kpi-num" style="color: var(--ok);" id="kpi-pneufs">0</div>
+      <div class="kpi-sub">Total gommes</div>
+    </div>
+    <div class="kpi-card" onclick="showTab('pneus_occ')">
+      <div class="kpi-label">Pneus d'Occasion</div>
+      <div class="kpi-num" style="color: var(--warn);" id="kpi-pocc">0</div>
+      <div class="kpi-sub">Total contrôlés</div>
+    </div>
+    <div class="kpi-card" onclick="showTab('usure')">
+      <div class="kpi-label">Alertes Usure (&lt; 3.5mm)</div>
+      <div class="kpi-num" style="color: var(--bad);" id="kpi-usure">0</div>
+      <div class="kpi-sub">Devis à proposer</div>
+    </div>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="tab-btn active" id="tab-gardiennage" onclick="showTab('gardiennage')">1. Gardiennage</button>
+    <button class="tab-btn" id="tab-roues_neuves" onclick="showTab('roues_neuves')">2. Roues Neuves</button>
+    <button class="tab-btn" id="tab-pneus_neufs" onclick="showTab('pneus_neufs')">3. Pneus Neufs</button>
+    <button class="tab-btn" id="tab-pneus_occ" onclick="showTab('pneus_occ')">4. Pneus d'Occasion</button>
+    <button class="tab-btn" id="tab-usure" onclick="showTab('usure')">5. Alertes Usure</button>
+    <input type="text" id="searchInput" class="search-box" placeholder="Rechercher (client, plaque, dimension…)" oninput="renderAll()">
+  </div>
+
+  <div class="view-section active" id="view-gardiennage">
+    <div class="section-head">
+      <div><h3>Registre Gardiennage Clients</h3><span style="font-size: 11px; color: var(--muted);">Jeux gardés en atelier</span></div>
+      <button class="btn-add" onclick="openModal('gardiennage')">+ Nouveau Gardiennage</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Emplacement</th><th>Client / Tél</th><th>Véhicule & Plaque</th><th>Dimensions Pneus</th><th>Sculpture (AVG/AVD/ARG/ARD)</th><th>Saison</th><th>Action</th></tr></thead>
+        <tbody id="tbody-gard"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="view-section" id="view-roues_neuves">
+    <div class="section-head">
+      <div><h3>Catalogue Packs Roues Neuves</h3><span style="font-size: 11px; color: var(--muted);">Ajustez la quantité (+ / -) et le prix directement</span></div>
+      <button class="btn-add" onclick="openModal('roue_neuve')">+ Nouveau Pack</button>
+    </div>
+    <div class="cards-grid" id="grid-roues"></div>
+  </div>
+
+  <div class="view-section" id="view-pneus_neufs">
+    <div class="section-head">
+      <div><h3>Stock Pneus Neufs</h3><span style="font-size: 11px; color: var(--muted);">Gommes neuves</span></div>
+      <button class="btn-add" onclick="openModal('pneu_neuf')">+ Ajouter Pneus Neufs</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Marque & Modèle</th><th>Dimension</th><th>Indice</th><th>Saison</th><th>DOT</th><th>Quantité</th><th>Prix HT</th><th>Action</th></tr></thead>
+        <tbody id="tbody-pneufs"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="view-section" id="view-pneus_occ">
+    <div class="section-head">
+      <div><h3>Stock Pneus d'Occasion Contrôlés</h3><span style="font-size: 11px; color: var(--muted);">Pneus seconde main</span></div>
+      <button class="btn-add" onclick="openModal('pneu_occ')">+ Ajouter Pneus Occasion</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Marque & Modèle</th><th>Dimension</th><th>Profil Restant</th><th>Saison</th><th>DOT</th><th>Quantité</th><th>Prix TTC</th><th>Action</th></tr></thead>
+        <tbody id="tbody-pocc"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="view-section" id="view-usure">
+    <div class="section-head">
+      <div><h3 style="color: var(--bad);">Alertes Usure Critique (&lt; 3.5mm)</h3><span style="font-size: 11px; color: var(--muted);">Clients à contacter</span></div>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Client & Téléphone</th><th>Véhicule & Plaque</th><th>Dimensions</th><th>Usure Constatée</th><th>Emplacement</th><th>Action</th></tr></thead>
+        <tbody id="tbody-usure"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal-box">
+    <div class="modal-title"><span>Ajouter au Stock BK AUTO</span><button class="close-btn" onclick="closeModal()" aria-label="Fermer">&times;</button></div>
+    <div class="modal-tabs">
+      <button class="modal-tab-btn active" id="mbtn-gard" onclick="switchForm('gard')">Gardiennage</button>
+      <button class="modal-tab-btn" id="mbtn-roue" onclick="switchForm('roue')">Roue Neuve</button>
+      <button class="modal-tab-btn" id="mbtn-pneuf" onclick="switchForm('pneuf')">Pneu Neuf</button>
+      <button class="modal-tab-btn" id="mbtn-pocc" onclick="switchForm('pocc')">Pneu Occasion</button>
+    </div>
+
+    <!-- Bloc scan -->
+    <div class="scan-panel" id="scanPanel">
+      <div class="scan-head"><b>Scan photo</b><span id="scanHint">Une photo suffit : les champs se remplissent</span></div>
+      <div class="scan-btns">
+        <label class="scan-btn" id="scanBtnCarte">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h6M7 14h10"/></svg>
+          Carte grise
+          <input type="file" id="fileCarte" accept="image/*" onchange="runScan('carte', this)">
+        </label>
+        <label class="scan-btn" id="scanBtnPneu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v5M12 16v5M3 12h5M16 12h5"/></svg>
+          Flanc du pneu
+          <input type="file" id="filePneu" accept="image/*" multiple onchange="runScan('pneu', this)">
+        </label>
+      </div>
+      <div class="scan-status" id="scanStatus" hidden></div>
+    </div>
+
+    <form id="form-gard" onsubmit="saveGardiennage(event)">
+      <div class="form-row"><div class="form-group"><label for="gClient">Client *</label><input type="text" id="gClient" required></div><div class="form-group"><label for="gPhone">Téléphone</label><input type="text" id="gPhone"></div></div>
+      <div class="form-row"><div class="form-group"><label for="gCar">Véhicule *</label><input type="text" id="gCar" required></div><div class="form-group"><label for="gPlate">Immatriculation *</label><input type="text" id="gPlate" required></div></div>
+      <div class="form-group"><label for="gVin">N° de châssis (VIN)</label><input type="text" id="gVin" placeholder="Optionnel — rempli par le scan de la carte grise"></div>
+      <div class="form-row"><div class="form-group"><label for="gTyres">Dimensions Pneus *</label><input type="text" id="gTyres" required></div><div class="form-group"><label for="gSeason">Saison *</label><select id="gSeason"><option value="Hiver">Hiver</option><option value="Été">Été</option><option value="4 Saisons">4 Saisons</option></select></div></div>
+      <div class="form-group"><label for="gRack">Emplacement Rack *</label><input type="text" id="gRack" required></div>
+      <div class="form-group"><label>Mesures usure (en mm)</label><div class="form-row-4"><input type="number" step="0.1" id="gFL" placeholder="AVG"><input type="number" step="0.1" id="gFR" placeholder="AVD"><input type="number" step="0.1" id="gRL" placeholder="ARG"><input type="number" step="0.1" id="gRR" placeholder="ARD"></div></div>
+      <button type="submit" class="btn-add" style="width: 100%; margin-top: 10px;">Enregistrer</button>
+    </form>
+
+    <form id="form-roue" style="display: none;" onsubmit="saveRoueNeuve(event)">
+      <div class="form-group"><label for="rnTitle">Titre / Modèle *</label><input type="text" id="rnTitle" required placeholder="ex: RDC Roue Complète Hiver Alliage"></div>
+      <div class="form-row"><div class="form-group"><label for="rnRims">Jantes / Réf *</label><input type="text" id="rnRims" required placeholder="ex: Alliage OEM (36112471496)"></div><div class="form-group"><label for="rnTyres">Pneus montés *</label><input type="text" id="rnTyres" required placeholder="ex: Pneus Hiver RDC"></div></div>
+      <div class="form-row"><div class="form-group"><label for="rnQty">Quantité (pièces) *</label><input type="number" id="rnQty" required value="4"></div><div class="form-group"><label for="rnPrice">Prix Unitaire ou Lot *</label><input type="number" id="rnPrice" required placeholder="230"></div></div>
+      <button type="submit" class="btn-add" style="width: 100%; margin-top: 10px;">Ajouter</button>
+    </form>
+
+    <form id="form-pneuf" style="display: none;" onsubmit="savePneuNeuf(event)">
+      <div class="form-row"><div class="form-group"><label for="pnBrand">Marque *</label><input type="text" id="pnBrand" required></div><div class="form-group"><label for="pnModel">Profil *</label><input type="text" id="pnModel" required></div></div>
+      <div class="form-row"><div class="form-group"><label for="pnDim">Dimension *</label><input type="text" id="pnDim" required></div><div class="form-group"><label for="pnIndex">Indice *</label><input type="text" id="pnIndex" required></div></div>
+      <div class="form-row"><div class="form-group"><label for="pnSeason">Saison</label><select id="pnSeason"><option value="Été">Été</option><option value="Hiver">Hiver</option><option value="4 Saisons">4 Saisons</option></select></div><div class="form-group"><label for="pnDot">DOT (semaine/année)</label><input type="text" id="pnDot" placeholder="ex: 2425"></div></div>
+      <div class="form-row"><div class="form-group"><label for="pnQty">Quantité *</label><input type="number" id="pnQty" required></div><div class="form-group"><label for="pnPrice">Prix HT *</label><input type="number" id="pnPrice" required></div></div>
+      <button type="submit" class="btn-add" style="width: 100%; margin-top: 10px;">Ajouter</button>
+    </form>
+
+    <form id="form-pocc" style="display: none;" onsubmit="savePneuOccasion(event)">
+      <div class="form-row"><div class="form-group"><label for="poBrand">Marque *</label><input type="text" id="poBrand" required></div><div class="form-group"><label for="poModel">Profil *</label><input type="text" id="poModel" required></div></div>
+      <div class="form-row"><div class="form-group"><label for="poDim">Dimension *</label><input type="text" id="poDim" required></div><div class="form-group"><label for="poTread">Profondeur restante *</label><input type="text" id="poTread" required placeholder="mesurer à la jauge"></div></div>
+      <div class="form-row"><div class="form-group"><label for="poSeason">Saison</label><select id="poSeason"><option value="Été">Été</option><option value="Hiver">Hiver</option><option value="4 Saisons">4 Saisons</option></select></div><div class="form-group"><label for="poDot">DOT (semaine/année)</label><input type="text" id="poDot" placeholder="ex: 1222"></div></div>
+      <div class="form-row"><div class="form-group"><label for="poQty">Quantité *</label><input type="number" id="poQty" required></div><div class="form-group"><label for="poPrice">Prix TTC *</label><input type="number" id="poPrice" required></div></div>
+      <button type="submit" class="btn-add" style="width: 100%; margin-top: 10px;">Ajouter</button>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+  // ---------- Stockage (protégé : peut être indisponible) ----------
+  const store = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+    clear() { try { localStorage.clear(); } catch (e) {} }
+  };
+
+  const defaultRoues = [
+    { id: 101, title: "RDC Roue Complète Hiver Alliage", rims: "Alliage OEM (Réf: 36112471496)", tyres: "Pneus Hiver RDC", qty: 28, price: 230 },
+    { id: 102, title: "RDC Roue Complète Hiver Noir Mat", rims: "Noir Mat OEM (Réf: 36115A24011)", tyres: "Pneus Hiver RDC", qty: 4, price: 230 },
+    { id: 103, title: "Roue Complète RDC Hiver Noire", rims: "Noire OEM (Réf: 36115A24012)", tyres: "Pneus Hiver RDC", qty: 2, price: 230 },
+    { id: 104, title: "Roue Complète RDC Hiver Noire", rims: "Noire OEM (Réf: 36115A24014)", tyres: "Pneus Hiver RDC", qty: 2, price: 230 },
+    { id: 105, title: "RDC Roue Complète Hiver Alliage", rims: "Alliage OEM (Réf: 36112462558)", tyres: "Pneus Hiver RDC", qty: 4, price: 230 },
+    { id: 106, title: "Roue Complète RDC Hiver Noire", rims: "Noire OEM (Réf: 36115A085B1)", tyres: "Pneus Hiver RDC", qty: 8, price: 230 },
+    { id: 107, title: "Roue Complète RDC Hiver Noire", rims: "Noire OEM (Réf: 36110048021)", tyres: "Pneus Hiver RDC", qty: 8, price: 230 },
+    { id: 108, title: "RDC Roue Complète Hiver Alliage", rims: "Alliage OEM (Réf: 36112471514)", tyres: "Pneus Hiver RDC", qty: 8, price: 150 },
+    { id: 109, title: "RDC Roue Complète Hiver Ferricgrey", rims: "Ferricgrey OEM (Réf: 36110003062)", tyres: "Pneus Hiver RDC", qty: 4, price: 150 },
+    { id: 110, title: "RDC Roue Complète Hiver Alliage", rims: "Alliage OEM (Réf: 36115A23FE5)", tyres: "Pneus Hiver RDC", qty: 4, price: 150 },
+    { id: 111, title: "RDC Roue Complète Hiver Jet Black", rims: "Jet Black OEM (Réf: 36115A64987)", tyres: "Pneus Hiver RDC", qty: 2, price: 150 },
+    { id: 112, title: "RDC Roue Complète Hiver Jet Black", rims: "Jet Black OEM (Réf: 36115A64985)", tyres: "Pneus Hiver RDC", qty: 2, price: 150 },
+    { id: 113, title: "RDC Roue Complète Hiver Midnight Grey", rims: "Midnight Grey OEM (Réf: 36115A8E341)", tyres: "Pneus Hiver RDC", qty: 2, price: 150 },
+    { id: 114, title: "Roue Complète Hiver RDCi en Acier", rims: "Acier OEM (Réf: 36112460621)", tyres: "Pneus Hiver RDCi", qty: 8, price: 150 }
+  ];
+  const defaultGard = [
+    { id: 1, client: "Marc Keller", phone: "+41 79 123 45 67", car: "BMW M3", plate: "VD 982 104", tyres: "275/35 R19 Michelin", season: "Hiver", rack: "RACK-A-01", fl: 6.8, fr: 6.8, rl: 6.2, rr: 6.2 },
+    { id: 2, client: "Sarah Benali", phone: "+41 78 654 32 10", car: "Audi RS4", plate: "GE 774 210", tyres: "275/30 R20 Continental", season: "Été", rack: "RACK-A-02", fl: 3.1, fr: 3.0, rl: 3.2, rr: 3.1 }
+  ];
+  const defaultPneufs = () => [{ id: 1, brand: "Michelin", model: "Pilot Sport 5", dim: "225/40 R18", index: "92Y XL", season: "Été", dot: "", qty: 12, price: 145 }];
+  const defaultPocc = () => [{ id: 1, brand: "Continental", model: "SportContact 5", dim: "225/45 R17", tread: "6.2 mm", season: "Été", dot: "", qty: 2, price: 120 }];
+
+  let dbGard = store.get('bk_g') || defaultGard;
+  let dbRoues = (store.get('bk_r') && store.get('bk_r').length) ? store.get('bk_r') : defaultRoues;
+  let dbPneufs = store.get('bk_pn') || defaultPneufs();
+  let dbPocc = store.get('bk_po') || defaultPocc();
+
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const seasonBadge = s => `<span class="badge ${s === 'Hiver' ? 'badge-hiver' : s === '4 Saisons' ? 'badge-4s' : 'badge-ete'}">${esc(s || 'Été')}</span>`;
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(toast._t); toast._t = setTimeout(() => { t.hidden = true; }, 3200);
+  }
+
+  function forceReloadAll() {
+    store.clear();
+    dbGard = defaultGard; dbRoues = defaultRoues; dbPneufs = defaultPneufs(); dbPocc = defaultPocc();
+    saveAll(); showTab('roues_neuves');
+  }
+
+  function persist() {
+    store.set('bk_g', dbGard); store.set('bk_r', dbRoues); store.set('bk_pn', dbPneufs); store.set('bk_po', dbPocc);
+  }
+  function saveAll() { persist(); renderAll(); }
+
+  function changeQty(type, id, delta) {
+    const list = type === 'roue' ? dbRoues : type === 'pneuf' ? dbPneufs : dbPocc;
+    const item = list.find(x => x.id === id);
+    if (item) item.qty = Math.max(0, (parseInt(item.qty) || 0) + delta);
+    saveAll();
+  }
+
+  function updatePrice(type, id, newPrice) {
+    if (type === 'roue') { const item = dbRoues.find(x => x.id === id); if (item) item.price = newPrice; }
+    persist();
+  }
+
+  function showTab(tabName) {
+    document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('view-' + tabName).classList.add('active');
+    document.getElementById('tab-' + tabName).classList.add('active');
+  }
+
+  let currentForm = 'gard';
+  function openModal(mode, focusScan) {
+    document.getElementById('addModal').classList.add('active');
+    if (mode === 'roue_neuve') switchForm('roue');
+    else if (mode === 'pneu_neuf') switchForm('pneuf');
+    else if (mode === 'pneu_occ') switchForm('pocc');
+    else switchForm('gard');
+    if (focusScan) document.getElementById('scanBtnCarte').focus();
+  }
+  function closeModal() { document.getElementById('addModal').classList.remove('active'); }
+
+  function switchForm(fName) {
+    currentForm = fName;
+    ['gard', 'roue', 'pneuf', 'pocc'].forEach(f => {
+      document.getElementById('form-' + f).style.display = (f === fName) ? 'block' : 'none';
+      document.getElementById('mbtn-' + f).classList.toggle('active', f === fName);
+    });
+    // Bloc scan : carte grise + pneu pour le gardiennage, pneu seul pour les stocks, rien pour les packs roues
+    document.getElementById('scanPanel').hidden = (fName === 'roue');
+    document.getElementById('scanBtnCarte').hidden = (fName !== 'gard');
+    document.querySelector('.scan-btns').style.gridTemplateColumns = fName === 'gard' ? '1fr 1fr' : '1fr';
+    document.getElementById('scanHint').textContent = fName === 'gard'
+      ? 'Une photo suffit : client et jeu de pneus remplis'
+      : 'Photo du flanc : marque, dimension, indice, DOT';
+    setScanStatus(null);
+  }
+
+  function resetForm(id) { const f = document.getElementById(id); f.reset(); f.querySelectorAll('.filled').forEach(el => el.classList.remove('filled')); }
+
+  function saveGardiennage(e) {
+    e.preventDefault();
+    const v = id => document.getElementById(id).value;
+    dbGard.unshift({
+      id: Date.now(), client: v('gClient'), phone: v('gPhone'), car: v('gCar'), plate: v('gPlate').toUpperCase(),
+      vin: v('gVin').toUpperCase(), tyres: v('gTyres'), season: v('gSeason'), rack: v('gRack').toUpperCase(),
+      fl: v('gFL') || '-', fr: v('gFR') || '-', rl: v('gRL') || '-', rr: v('gRR') || '-'
+    });
+    resetForm('form-gard'); saveAll(); closeModal(); showTab('gardiennage'); toast('Gardiennage enregistré');
+  }
+  function saveRoueNeuve(e) {
+    e.preventDefault();
+    dbRoues.unshift({ id: Date.now(), title: rnTitle.value, rims: rnRims.value, tyres: rnTyres.value, qty: parseInt(rnQty.value) || 1, price: rnPrice.value });
+    resetForm('form-roue'); saveAll(); closeModal(); showTab('roues_neuves'); toast('Pack ajouté');
+  }
+  function savePneuNeuf(e) {
+    e.preventDefault();
+    dbPneufs.unshift({ id: Date.now(), brand: pnBrand.value, model: pnModel.value, dim: pnDim.value, index: pnIndex.value, season: pnSeason.value, dot: pnDot.value, qty: parseInt(pnQty.value) || 1, price: pnPrice.value });
+    resetForm('form-pneuf'); saveAll(); closeModal(); showTab('pneus_neufs'); toast('Pneus neufs ajoutés');
+  }
+  function savePneuOccasion(e) {
+    e.preventDefault();
+    dbPocc.unshift({ id: Date.now(), brand: poBrand.value, model: poModel.value, dim: poDim.value, tread: poTread.value, season: poSeason.value, dot: poDot.value, qty: parseInt(poQty.value) || 1, price: poPrice.value });
+    resetForm('form-pocc'); saveAll(); closeModal(); showTab('pneus_occ'); toast("Pneus d'occasion ajoutés");
+  }
+
+  // ---------- SCAN (lecture de photo par Claude) ----------
+  const samplePromise = (window.claude && typeof window.claude.use === 'function')
+    ? window.claude.use('sample').catch(() => null)
+    : Promise.resolve(null);
+
+  const PROMPT_CARTE = `La photo montre un permis de circulation suisse (« carte grise ») ou un certificat d'immatriculation européen, pris au téléphone dans un garage.
+Lis-le et réponds UNIQUEMENT avec un objet JSON de cette forme :
+{"client": "Nom Prénom du détenteur (champ 01 sur le permis suisse) ou raison sociale", "vehicule": "Marque et modèle/type lisibles (champ 21), ex. \\"BMW 320d xDrive Touring\\"", "plaque": "Numéro de plaque (champ 15), format suisse \\"VD 123456\\" avec l'abréviation du canton", "vin": "Numéro de châssis 17 caractères (champ 23)", "premiere_immat": "Date de 1re mise en circulation (champ 36), JJ.MM.AAAA", "pneus": "Dimensions de pneus si elles figurent sur le document, sinon null"}
+Mets null pour tout champ absent ou illisible. N'invente jamais une valeur. Si la photo n'est pas une carte grise, réponds {"erreur": "courte explication"}.`;
+
+  const PROMPT_PNEU = `La ou les photos montrent le flanc d'un pneu (une ou plusieurs vues du même pneu), prises au téléphone dans un garage. Les inscriptions sont moulées dans le caoutchouc : lis-les attentivement.
+Réponds UNIQUEMENT avec un objet JSON de cette forme :
+{"marque": "ex. Michelin", "modele": "nom du profil, ex. Pilot Alpin 5", "dimension": "format 225/45 R17", "indice": "indice de charge + vitesse, avec XL / RunFlat (RSC, ZP, SSR, RFT) / marquage constructeur (★, MO, AO, N0…) s'ils sont visibles, ex. \\"94V XL ★\\"", "saison": "Hiver" | "Été" | "4 Saisons" | null, "dot": "4 derniers chiffres du code DOT (semaine+année), ex. \\"2423\\"", "remarques": "autre info utile très courte, ou null"}
+Saison : "Hiver" si le symbole 3PMSF (montagne + flocon) est présent sur un pneu hiver, "4 Saisons" si le modèle est un toutes-saisons (All Season, 4Seasons, CrossClimate…), "Été" pour un pneu été évident, sinon null.
+Mets null pour tout champ illisible. N'invente jamais une valeur. Si ce n'est pas un pneu, réponds {"erreur": "courte explication"}.`;
+
+  function setScanStatus(kind, html, imgFile) {
+    const el = document.getElementById('scanStatus');
+    if (!kind) { el.hidden = true; el.innerHTML = ''; return; }
+    el.hidden = false;
+    el.className = 'scan-status ' + kind;
+    let thumb = '';
+    if (imgFile) { try { thumb = `<img alt="" src="${URL.createObjectURL(imgFile)}">`; } catch (e) {} }
+    el.innerHTML = (kind === 'busy' ? '<div class="spin"></div>' : thumb) + `<div>${html}</div>`;
+  }
+
+  function fill(id, value) {
+    if (value === null || value === undefined || String(value).trim() === '' || String(value).toLowerCase() === 'null') return false;
+    const el = document.getElementById(id);
+    if (el.tagName === 'SELECT') {
+      const opt = Array.from(el.options).find(o => o.value === value);
+      if (!opt) return false;
+    }
+    el.value = String(value).trim();
+    el.classList.remove('filled'); void el.offsetWidth; el.classList.add('filled');
+    return true;
+  }
+
+  const SCAN_ERRORS = {
+    not_granted: "Le scan a besoin de ton accord pour envoyer la photo à Claude. Réessaie et accepte la demande.",
+    rate_limited: "Trop de scans d'affilée ou limite d'utilisation atteinte. Réessaie dans un moment.",
+    image_rejected: "Photo refusée (format ou taille). Reprends-la en JPEG ou PNG.",
+    images_unavailable: "L'envoi de photos n'est pas disponible dans cette vue.",
+    invalid_json: "La lecture n'a rien donné d'exploitable. Reprends la photo plus nette, bien cadrée.",
+    session_expired: "Ta session Claude a expiré. Reconnecte-toi puis réessaie.",
+    sampling_disabled: "Claude n'est pas disponible pour ce compte.",
+    refused: "La photo n'a pas pu être lue. Essaie une autre photo."
+  };
+
+  async function runScan(kind, input) {
+    const files = Array.from(input.files || []);
+    input.value = '';
+    if (!files.length) return;
+    const sample = await samplePromise;
+    if (!sample) {
+      setScanStatus('err', "Le scan utilise Claude pour lire la photo : il marche dans la version BK AUTO ouverte sur Claude (lien de l'artifact), pas dans le fichier HTML ouvert seul. Remplis le formulaire à la main ici.");
+      return;
+    }
+    const lim = await sample.limits().catch(() => null);
+    if (!lim || !lim.images) { setScanStatus('err', SCAN_ERRORS.images_unavailable); return; }
+    const imgs = files.slice(0, lim.images.maxCount || 1);
+
+    const btns = document.querySelectorAll('.scan-btn');
+    btns.forEach(b => b.classList.add('busy'));
+    setScanStatus('busy', kind === 'carte' ? 'Lecture de la carte grise…' : 'Lecture du flanc du pneu…');
+    try {
+      const data = await sample.json(kind === 'carte' ? PROMPT_CARTE : PROMPT_PNEU, { images: imgs });
+      if (!data || typeof data !== 'object') throw { code: 'invalid_json' };
+      if (data.erreur) { setScanStatus('err', esc(data.erreur), imgs[0]); return; }
+      const got = [];
+      if (kind === 'carte') {
+        if (fill('gClient', data.client)) got.push('Client : ' + esc(data.client));
+        if (fill('gCar', data.vehicule)) got.push('Véhicule : ' + esc(data.vehicule));
+        if (data.plaque && fill('gPlate', String(data.plaque).toUpperCase())) got.push('Plaque : ' + esc(data.plaque));
+        if (data.vin && fill('gVin', String(data.vin).toUpperCase())) got.push('VIN : ' + esc(data.vin));
+        if (data.pneus && fill('gTyres', data.pneus)) got.push('Pneus : ' + esc(data.pneus));
+        if (data.premiere_immat) got.push('1re mise en circulation : ' + esc(data.premiere_immat));
+      } else {
+        const label = [data.dimension, data.marque, data.modele].filter(Boolean).join(' ');
+        if (currentForm === 'gard') {
+          const cur = document.getElementById('gTyres').value.trim();
+          if (label && fill('gTyres', label + (data.indice ? ' ' + data.indice : ''))) got.push('Pneus : ' + esc(label));
+          if (fill('gSeason', data.saison)) got.push('Saison : ' + esc(data.saison));
+        } else {
+          const p = currentForm === 'pneuf' ? 'pn' : 'po';
+          if (fill(p + 'Brand', data.marque)) got.push('Marque : ' + esc(data.marque));
+          if (fill(p + 'Model', data.modele)) got.push('Profil : ' + esc(data.modele));
+          if (fill(p + 'Dim', data.dimension)) got.push('Dimension : ' + esc(data.dimension));
+          if (p === 'pn' && fill('pnIndex', data.indice)) got.push('Indice : ' + esc(data.indice));
+          if (p === 'po' && data.indice) { const m = document.getElementById('poModel'); if (m.value) m.value += ' ' + data.indice; }
+          if (fill(p + 'Season', data.saison)) got.push('Saison : ' + esc(data.saison));
+          if (fill(p + 'Dot', data.dot)) got.push('DOT : ' + esc(data.dot));
+        }
+        if (currentForm === 'gard' && data.dot) got.push('DOT : ' + esc(data.dot));
+        if (data.remarques) got.push(esc(data.remarques));
+      }
+      if (!got.length) { setScanStatus('err', "Rien de lisible sur cette photo. Reprends-la plus près, sans reflet.", imgs[0]); return; }
+      const check = (kind === 'pneu' && currentForm === 'pocc') ? ' La profondeur restante se mesure à la jauge.' : '';
+      setScanStatus('ok', `<b>Champs remplis</b> — vérifie avant d'enregistrer.${check}<ul>${got.map(g => '<li>' + g + '</li>').join('')}</ul>`, imgs[0]);
+    } catch (e) {
+      if (e && e.code === 'cancelled') { setScanStatus(null); return; }
+      setScanStatus('err', SCAN_ERRORS[e && e.code] || "La lecture a échoué (connexion). Réessaie.", imgs[0]);
+    } finally {
+      btns.forEach(b => b.classList.remove('busy'));
+    }
+  }
+
+  // ---------- Rendu ----------
+  function renderAll() {
+    const q = (document.getElementById('searchInput').value || '').toLowerCase();
+    const has = (...vals) => vals.some(v => String(v ?? '').toLowerCase().includes(q));
+
+    document.getElementById('kpi-gard').innerText = dbGard.length;
+    document.getElementById('kpi-gard-sub').innerText = dbGard.filter(g => g.season === 'Hiver').length + ' Hiver • ' + dbGard.filter(g => g.season !== 'Hiver').length + ' Été / 4S';
+    document.getElementById('kpi-roues').innerText = dbRoues.reduce((a, b) => a + (parseInt(b.qty) || 0), 0);
+    document.getElementById('kpi-pneufs').innerText = dbPneufs.reduce((a, b) => a + (parseInt(b.qty) || 0), 0);
+    document.getElementById('kpi-pocc').innerText = dbPocc.reduce((a, b) => a + (parseInt(b.qty) || 0), 0);
+
+    const usureList = dbGard.filter(g => [g.fl, g.fr, g.rl, g.rr].some(v => v !== '-' && v !== '' && parseFloat(v) < 3.5));
+    document.getElementById('kpi-usure').innerText = usureList.length;
+
+    document.getElementById('tbody-gard').innerHTML = dbGard.filter(g => has(g.client, g.plate, g.car, g.tyres, g.vin)).map(g => `
+      <tr>
+        <td><span class="badge-rack">${esc(g.rack)}</span></td>
+        <td><b>${esc(g.client)}</b><br><span style="font-size:10px; color:var(--muted);">${esc(g.phone)}</span></td>
+        <td>${esc(g.car)}<br><span style="font-family:monospace; color:var(--sky); font-weight:700;">${esc(g.plate)}</span>${g.vin ? `<br><span style="font-family:monospace; font-size:10px; color:var(--dim);">${esc(g.vin)}</span>` : ''}</td>
+        <td>${esc(g.tyres)}</td>
+        <td>AVG: ${esc(g.fl)} | AVD: ${esc(g.fr)}<br>ARG: ${esc(g.rl)} | ARD: ${esc(g.rr)}</td>
+        <td>${seasonBadge(g.season)}</td>
+        <td><button class="btn-delete" onclick="deleteItem(this, 'gard', ${g.id})">Suppr</button></td>
+      </tr>`).join('');
+
+    document.getElementById('grid-roues').innerHTML = dbRoues.filter(r => has(r.title, r.rims)).map(r => `
+      <div class="prod-card">
+        <div>
+          <h4 style="color:var(--violet); margin-bottom:6px;">${esc(r.title)}</h4>
+          <div style="font-size:11px; color:var(--muted); line-height:1.5;">Jantes : <b>${esc(r.rims)}</b><br>Pneus : ${esc(r.tyres)}</div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:10px;">
+          <div class="qty-ctrl">
+            <button class="btn-qty" onclick="changeQty('roue', ${r.id}, -1)">-</button>
+            <span class="qty-display">${esc(r.qty || 0)} pcs</span>
+            <button class="btn-qty" onclick="changeQty('roue', ${r.id}, 1)">+</button>
+          </div>
+          <div class="price-edit-ctrl">
+            <input type="number" class="input-price" id="price-${r.id}" value="${esc(r.price)}" onchange="updatePrice('roue', ${r.id}, this.value)">
+            <span style="font-size:12px; font-weight:900; color:var(--ok);">CHF/€</span>
+          </div>
+          <button class="btn-delete" onclick="deleteItem(this, 'roue', ${r.id})">Suppr</button>
+        </div>
+      </div>`).join('');
+
+    const qtyCtrl = (t, p) => `<div class="qty-ctrl"><button class="btn-qty" onclick="changeQty('${t}', ${p.id}, -1)">-</button><span class="qty-display">${esc(p.qty)}</span><button class="btn-qty" onclick="changeQty('${t}', ${p.id}, 1)">+</button></div>`;
+
+    document.getElementById('tbody-pneufs').innerHTML = dbPneufs.filter(p => has(p.brand, p.model, p.dim)).map(p => `
+      <tr>
+        <td><b>${esc(p.brand)}</b> ${esc(p.model)}</td>
+        <td style="font-family:monospace; color:var(--sky); font-weight:700;">${esc(p.dim)}</td>
+        <td>${esc(p.index)}</td>
+        <td>${seasonBadge(p.season)}</td>
+        <td style="font-family:monospace;">${esc(p.dot || '–')}</td>
+        <td>${qtyCtrl('pneuf', p)}</td>
+        <td style="font-weight:700;">${esc(p.price)} CHF/€</td>
+        <td><button class="btn-delete" onclick="deleteItem(this, 'pneuf', ${p.id})">Suppr</button></td>
+      </tr>`).join('');
+
+    document.getElementById('tbody-pocc').innerHTML = dbPocc.filter(p => has(p.brand, p.model, p.dim)).map(p => `
+      <tr>
+        <td><b>${esc(p.brand)}</b> ${esc(p.model)}</td>
+        <td style="font-family:monospace; color:var(--warn); font-weight:700;">${esc(p.dim)}</td>
+        <td style="color:var(--ok); font-weight:700;">${esc(p.tread)}</td>
+        <td>${seasonBadge(p.season)}</td>
+        <td style="font-family:monospace;">${esc(p.dot || '–')}</td>
+        <td>${qtyCtrl('pocc', p)}</td>
+        <td style="font-weight:900; color:var(--warn);">${esc(p.price)} CHF/€</td>
+        <td><button class="btn-delete" onclick="deleteItem(this, 'pocc', ${p.id})">Suppr</button></td>
+      </tr>`).join('');
+
+    document.getElementById('tbody-usure').innerHTML = usureList.map(u => `
+      <tr>
+        <td><b>${esc(u.client)}</b><br><span style="font-size:10px; color:var(--muted);">${esc(u.phone)}</span></td>
+        <td>${esc(u.car)} (${esc(u.plate)})</td>
+        <td>${esc(u.tyres)}</td>
+        <td><span class="tread-alert">&lt; 3.5 mm mesuré</span></td>
+        <td><span class="badge-rack">${esc(u.rack)}</span></td>
+        <td><button class="btn-add" style="padding:4px 8px; font-size:11px;" onclick="toast('Devis créé pour ' + ${JSON.stringify(u.client).replace(/"/g, '&quot;')})">Créer Devis</button></td>
+      </tr>`).join('');
+  }
+
+  // Suppression en deux clics (les fenêtres de confirmation ne s'affichent pas dans Claude)
+  function deleteItem(btn, type, id) {
+    if (!btn.classList.contains('armed')) {
+      btn.classList.add('armed'); btn.textContent = 'Confirmer ?';
+      setTimeout(() => { if (btn.isConnected) { btn.classList.remove('armed'); btn.textContent = 'Suppr'; } }, 3000);
+      return;
+    }
+    if (type === 'gard') dbGard = dbGard.filter(x => x.id !== id);
+    if (type === 'roue') dbRoues = dbRoues.filter(x => x.id !== id);
+    if (type === 'pneuf') dbPneufs = dbPneufs.filter(x => x.id !== id);
+    if (type === 'pocc') dbPocc = dbPocc.filter(x => x.id !== id);
+    saveAll(); toast('Élément supprimé');
+  }
+
+  const downloadsPromise = (window.claude && typeof window.claude.use === 'function')
+    ? window.claude.use('downloads').catch(() => null)
+    : Promise.resolve(null);
+
+  async function exportData() {
+    const q = s => '"' + String(s ?? '').replace(/"/g, '""') + '"';
+    let csv = "Type,Designation,Reference_ou_Modele,Quantite,Prix_ou_Rack\n";
+    dbGard.forEach(g => csv += ['Gardiennage', q(g.client), q(g.car + ' - ' + g.plate), q('1 jeu'), q(g.rack)].join(',') + '\n');
+    dbRoues.forEach(r => csv += ['Roue Neuve', q(r.title), q(r.rims), q(r.qty + ' pcs'), q(r.price)].join(',') + '\n');
+    dbPneufs.forEach(p => csv += ['Pneu Neuf', q(p.brand), q(p.model + ' - ' + p.dim), q(p.qty + ' pcs'), q(p.price)].join(',') + '\n');
+    dbPocc.forEach(p => csv += ['Pneu Occasion', q(p.brand), q(p.model + ' - ' + p.dim), q(p.qty + ' pcs'), q(p.price)].join(',') + '\n');
+    const blob = new Blob(["﻿" + csv], { type: 'text/csv;charset=utf-8;' });
+    const dl = await downloadsPromise;
+    if (dl) {
+      try { await dl.save({ filename: 'BK_AUTO_Stock.csv', data: blob }); } catch (e) { if (e && e.code !== 'declined') toast("L'export n'a pas pu être enregistré."); }
+      return;
+    }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'BK_AUTO_Stock.csv'; a.click();
+  }
+
+  document.getElementById('addModal').addEventListener('click', e => { if (e.target.id === 'addModal') closeModal(); });
+  switchForm('gard');
+  renderAll();
+</script>
+
+</body>
+</html>
